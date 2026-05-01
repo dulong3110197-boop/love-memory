@@ -23,54 +23,65 @@
   <div id="list" class="space-y-3"></div>
 </div>
 
-<script>
-let data = JSON.parse(localStorage.getItem('love_memory') || '[]');
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-function save() {
-  localStorage.setItem('love_memory', JSON.stringify(data));
-}
+const firebaseConfig = {
+    apiKey: "AIzaSyC7SiVP_Fe8dFjldM8v6UgLjRD3ZSe1aDM",
+    authDomain: "love-memory-34c26.firebaseapp.com",
+    projectId: "love-memory-34c26",
+    storageBucket: "love-memory-34c26.firebasestorage.app",
+    messagingSenderId: "949896687757",
+    appId: "1:949896687757:web:64a4aa7cd50d0a25db72c4",
+    measurementId: "G-EQ14R38HPZ"
+  };
 
-function render() {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
   const list = document.getElementById('list');
-  list.innerHTML = '';
 
-  data.slice().reverse().forEach((item, index) => {
-    list.innerHTML += `
-      <div class="border rounded-xl p-3 bg-pink-50">
-        <div class="flex justify-between items-center">
-          <h2 class="font-semibold">${item.title}</h2>
-          <button onclick="removeItem(${index})" class="text-red-400">X</button>
+  // 👉 LOAD REALTIME
+  const q = query(collection(db, "memories"), orderBy("createdAt", "desc"));
+
+  onSnapshot(q, (snapshot) => {
+    list.innerHTML = "";
+    snapshot.forEach(doc => {
+      const item = doc.data();
+
+      list.innerHTML += `
+        <div class="border rounded-xl p-3 bg-pink-50">
+          <h2>${item.title}</h2>
+          <p class="text-sm text-gray-500">${item.date}</p>
+          <p>${item.note}</p>
         </div>
-        <p class="text-sm text-gray-500">${item.date}</p>
-        <p class="mt-1">${item.note}</p>
-      </div>
-    `;
+      `;
+    });
   });
-}
 
-function addItem() {
-  const title = document.getElementById('title').value;
-  const date = document.getElementById('date').value;
-  const note = document.getElementById('note').value;
+  // 👉 THÊM KỶ NIỆM
+  window.addItem = async function () {
+    const title = document.getElementById('title').value;
+    const date = document.getElementById('date').value;
+    const note = document.getElementById('note').value;
 
-  if (!title) return alert('Nhập gì đó đi');
+    if (!title) {
+      alert("Nhập gì đó đi");
+      return;
+    }
 
-  data.push({ title, date, note });
-  save();
-  render();
+    await addDoc(collection(db, "memories"), {
+      title,
+      date,
+      note,
+      createdAt: new Date()
+    });
 
-  document.getElementById('title').value = '';
-  document.getElementById('date').value = '';
-  document.getElementById('note').value = '';
-}
-
-function removeItem(index) {
-  data.splice(data.length - 1 - index, 1);
-  save();
-  render();
-}
-
-render();
+    document.getElementById('title').value = "";
+    document.getElementById('date').value = "";
+    document.getElementById('note').value = "";
+  };
 </script>
 
 </body>
