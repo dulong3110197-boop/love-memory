@@ -15,6 +15,13 @@
   <div class="space-y-3 mb-6">
     <input id="title" class="w-full border rounded-xl p-2" placeholder="Hôm nay làm gì?">
     <input id="date" type="date" class="w-full border rounded-xl p-2">
+    
+    <!-- 👇 THÊM NGƯỜI VIẾT -->
+    <select id="author" class="w-full border rounded-xl p-2">
+      <option value="Anh">Anh</option>
+      <option value="Em">Em</option>
+    </select>
+
     <textarea id="note" class="w-full border rounded-xl p-2" placeholder="Ghi chú nhẹ..."></textarea>
     <button onclick="addItem()" class="w-full bg-pink-500 text-white py-2 rounded-xl">Thêm kỷ niệm</button>
   </div>
@@ -25,9 +32,16 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    onSnapshot, 
+    deleteDoc, 
+    doc 
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyC7SiVP_Fe8dFjldM8v6UgLjRD3ZSe1aDM",
     authDomain: "love-memory-34c26.firebaseapp.com",
     projectId: "love-memory-34c26",
@@ -42,51 +56,61 @@ const firebaseConfig = {
 
   const list = document.getElementById('list');
 
-  // 👉 LOAD REALTIME
-  const q = query(collection(db, "memories"), orderBy("createdAt", "desc"));
-
-  onSnapshot(q, (snapshot) => {
+  // 👉 LOAD REALTIME (bỏ orderBy cho ổn định)
+  onSnapshot(collection(db, "memories"), (snapshot) => {
     list.innerHTML = "";
-    snapshot.forEach(doc => {
-      const item = doc.data();
+
+    snapshot.forEach(docItem => {
+      const item = docItem.data();
+      const id = docItem.id;
 
       list.innerHTML += `
         <div class="border rounded-xl p-3 bg-pink-50">
-          <h2>${item.title}</h2>
+          <h2><b>${item.author || ""}:</b> ${item.title}</h2>
           <p class="text-sm text-gray-500">${item.date}</p>
           <p>${item.note}</p>
+          <button onclick="deleteItem('${id}')" 
+            class="mt-2 text-red-500 text-sm">
+            Xoá
+          </button>
         </div>
       `;
     });
   });
 
-  // 👉 THÊM KỶ NIỆM
+  // 👉 THÊM
   window.addItem = async function () {
     const title = document.getElementById('title').value;
     const date = document.getElementById('date').value;
     const note = document.getElementById('note').value;
+    const author = document.getElementById('author').value;
 
     if (!title) {
       alert("Nhập gì đó đi");
       return;
     }
 
-  try {
-  await addDoc(collection(db, "memories"), {
-    title,
-    date,
-    note,
-    createdAt: Date.now()
-  });
-  alert("Đã thêm thành công");
-} catch (e) {
-  console.error("Lỗi đây:", e);
-  alert("Có lỗi, mở F12 xem");
-}
+    try {
+      await addDoc(collection(db, "memories"), {
+        title,
+        date,
+        note,
+        author,
+        createdAt: Date.now()
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Lỗi, mở F12");
+    }
 
     document.getElementById('title').value = "";
     document.getElementById('date').value = "";
     document.getElementById('note').value = "";
+  };
+
+  // 👉 XOÁ
+  window.deleteItem = async function(id) {
+    await deleteDoc(doc(db, "memories", id));
   };
 </script>
 
