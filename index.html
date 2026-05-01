@@ -71,12 +71,18 @@ const firebaseConfig = {
       return;
     }
 
-    await addDoc(collection(db, "memories"), {
-      title,
-      date,
-      note,
-      createdAt: new Date()
-    });
+  try {
+  await addDoc(collection(db, "memories"), {
+    title,
+    date,
+    note,
+    createdAt: Date.now()
+  });
+  alert("Đã thêm thành công");
+} catch (e) {
+  console.error("Lỗi đây:", e);
+  alert("Có lỗi, mở F12 xem");
+}
 
     document.getElementById('title').value = "";
     document.getElementById('date').value = "";
